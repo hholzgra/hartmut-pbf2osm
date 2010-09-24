@@ -1,13 +1,31 @@
 #include "fileformat.pb-c.h"
 #include "osmformat.pb-c.h"
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 #include <zlib.h>
 
 #define NANO_DEGREE .000000001f
 #define MAX_BLOCK_HEADER_SIZE	64*1024
 //#define MAX_BLOB_SIZE		32*1024*1024
+
+/* 
+ * (Inline) function to convert a number of seconds since the epoch to
+ * a timestamp.
+ */
+char * deltatime2timestamp(const long int deltatimestamp) {
+  struct tm *ts = gmtime(&deltatimestamp);
+  if (ts == NULL) {
+    return NULL;
+  }
+  
+  char *timestamp = (char *)malloc(21 * sizeof(char));
+  strftime(timestamp, 21, "%Y-%m-%dT%H:%M:%SZ" , ts);
+  return timestamp;
+}
 
 char * handleCompressedBlob (Blob *bmsg) {
 	if (bmsg->has_zlib_data) {
@@ -165,7 +183,7 @@ int main(int argc, char **argv) {
 		}
 
 		granularity = pmsg->granularity * NANO_DEGREE;
-		printf("\t""Granularity: %li""\n", pmsg->granularity);
+		printf("\t""Granularity: %d""\n", pmsg->granularity);
 		printf("\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
 		for (j = 0; j < pmsg->n_primitivegroup; j++) {
 			printf("\t\t""Nodes: %li""\n"\
@@ -203,11 +221,14 @@ int main(int argc, char **argv) {
 						deltauid += pmsg->primitivegroup[j]->dense->denseinfo->uid[k];
 						deltauser_sid += pmsg->primitivegroup[j]->dense->denseinfo->user_sid[k];
 
-						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%li\"",
+            char *timestamp = deltatime2timestamp(deltatimestamp);
+
+						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%s\"",
 							deltaversion, deltachangeset,
 							(int) pmsg->stringtable->s[deltauser_sid].len,
-							pmsg->stringtable->s[deltauser_sid].data, deltauid, deltatimestamp);
+							pmsg->stringtable->s[deltauser_sid].data, deltauid, timestamp);
 
+            free(timestamp);
 					}
 
 					if (l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
