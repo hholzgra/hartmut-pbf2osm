@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 
 	printf("Length BlockHeader: %d\n", length);
 
-	if (length == 0 || length > MAX_BLOCK_HEADER_SIZE) {
+	if (length <= 0 || length > MAX_BLOCK_HEADER_SIZE) {
 		fprintf(stderr, "Block Header isn't present or exceeds maximum size\n");
 		return 1;
 	}
@@ -155,10 +155,24 @@ int main(int argc, char **argv) {
 
 		header_block__free_unpacked (hmsg, &protobuf_c_system_allocator);
 	} else if (state == osmdata) {
+		unsigned int j = 0;
 		PrimitiveBlock *pmsg = primitive_block__unpack (NULL, bmsg->raw_size, uncompressed);
 		if (pmsg == NULL) {
 			fprintf(stderr, "Error unpacking PrimitiveBlock message\n");
 			return 1;
+		}
+
+		printf("\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
+		while (j < pmsg->n_primitivegroup) {
+			printf("\t\t""Nodes: %li""\n"\
+			       "\t\t""Ways: %li""\n"\
+			       "\t\t""Relations: %li""\n",
+			       (pmsg->primitivegroup[j]->dense ?
+					pmsg->primitivegroup[j]->dense->n_id :
+			       		pmsg->primitivegroup[j]->n_nodes),
+			       pmsg->primitivegroup[j]->n_ways,
+			       pmsg->primitivegroup[j]->n_relations);
+			j++;
 		}
 
 		primitive_block__free_unpacked (pmsg, &protobuf_c_system_allocator);
@@ -168,19 +182,4 @@ int main(int argc, char **argv) {
 
 
 	} while (c != EOF);
-
-
-
-/*	while ((c=fgetc(stdin)) != EOF) {
-		if (i == MAX_MESSAGE_SIZE) {
-			fprintf(stderr, "message too long for this program\n");
-			return 1;
-		}
-
-		buf[i++] = c;
-	}
-
-	bhmsg = block_header__unpack (NULL, i, buf);
-*/
-
 }
