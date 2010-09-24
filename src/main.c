@@ -17,11 +17,13 @@
  * a timestamp.
  */
 char * deltatime2timestamp(const long int deltatimestamp) {
+  /* TODO: add date_granularity */
   struct tm *ts = gmtime(&deltatimestamp);
   if (ts == NULL) {
     return NULL;
   }
   
+  // maybe allocate this on the stack permanently?
   char *timestamp = (char *)malloc(21 * sizeof(char));
   strftime(timestamp, 21, "%Y-%m-%dT%H:%M:%SZ" , ts);
   return timestamp;
@@ -188,7 +190,7 @@ int main(int argc, char **argv) {
 		printf("\t""Granularity: %d""\n", pmsg->granularity);
 		printf("\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
 		for (j = 0; j < pmsg->n_primitivegroup; j++) {
-			printf("\t\t""Nodes: %li""\n"\
+			fprintf(stderr,"\t\t""Nodes: %li""\n"\
 			       "\t\t""Ways: %li""\n"\
 			       "\t\t""Relations: %li""\n",
 			       (pmsg->primitivegroup[j]->dense ?
@@ -197,7 +199,56 @@ int main(int argc, char **argv) {
 			       pmsg->primitivegroup[j]->n_ways,
 			       pmsg->primitivegroup[j]->n_relations);
 
+			/* TODO: Nodes is *untested* */
+			if (pmsg->primitivegroup[j]->n_nodes > 0) {
+				int k;
+				for (k = 0; k < pmsg->primitivegroup[j]->n_nodes; k++) {
+					Node *node = pmsg->primitivegroup[j]->nodes[k];
+					printf("<node id=\"%li\" lat=\"%f\" lon=\"%f\"",
+						node->id, granularity * node->lat, granularity * node->lon);
+					if (node->info) {
+						Info *info = node->info;
+						if (info->has_version) {
+							printf(" version=\"%d\"", (int) info->version);
+						}
+						if (info->has_changeset) {
+							printf(" changeset=\"%d\"", (int) info->changeset);
+						}
+						if (info->has_user_sid) {
+							ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
+							printf(" user=\"%.*s\"", (int) user.len, user.data);
+						}
+						if (info->has_uid) {
+							printf(" uid\"%d\"", (int) info->uid);
+						}
+						if (info->has_timestamp) {
+							char *timestamp = deltatime2timestamp(info->timestamp);
+							printf(" \"%s\"", timestamp);
+							free(timestamp);
+						}
+					}
 
+					if (node->n_keys == 0 || node->n_vals == 0) {
+						puts(" />");
+					} else {
+						int l;
+						
+						puts(">");
+
+						for (l = 0; l < node->n_keys; l++) {
+							ProtobufCBinaryData key = pmsg->stringtable->s[node->keys[l]];
+							ProtobufCBinaryData val = pmsg->stringtable->s[node->vals[l]];
+
+							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\" />""\n",
+								(int) key.len, key.data, 
+								(int) val.len, val.data);
+						}
+
+						puts("</node>");
+					}
+				}
+			}
+			/* else // currently the protocol generators only have one type per primitive block */
 			if (pmsg->primitivegroup[j]->dense) {
 				int k, l = 0;
 				unsigned long int deltaid = 0;
@@ -217,27 +268,29 @@ int main(int argc, char **argv) {
 						
 					printf("<node id=\"%li\" lat=\"%f\" lon=\"%f\"", deltaid, granularity*deltalat, granularity*deltalon);
 					if (pmsg->primitivegroup[j]->dense->denseinfo) {
+						char *timestamp;
+
 						deltaversion += pmsg->primitivegroup[j]->dense->denseinfo->version[k];
 						deltatimestamp += pmsg->primitivegroup[j]->dense->denseinfo->timestamp[k];
 						deltachangeset += pmsg->primitivegroup[j]->dense->denseinfo->changeset[k];
 						deltauid += pmsg->primitivegroup[j]->dense->denseinfo->uid[k];
 						deltauser_sid += pmsg->primitivegroup[j]->dense->denseinfo->user_sid[k];
 
-            char *timestamp = deltatime2timestamp(deltatimestamp);
+						timestamp = deltatime2timestamp(deltatimestamp);
 
 						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%s\"",
 							deltaversion, deltachangeset,
 							(int) pmsg->stringtable->s[deltauser_sid].len,
 							pmsg->stringtable->s[deltauser_sid].data, deltauid, timestamp);
 
-            free(timestamp);
+						free(timestamp);
 					}
 
 					if (l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
 						while (pmsg->primitivegroup[j]->dense->keys_vals[l] != 0 &&
 						       l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
 							if (has_tags == 0) {
-								has_tags = 1;
+								has_tags++;
 								puts(">");
 							}
 
