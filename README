@@ -1,0 +1,7 @@
+pbf2osm
+=======
+
+This programs converts pbf files back to osm based XML files. At the time of writing it can only handle dense nodes, thus more to come. In order to compile this program you will need:
+
+- protobuf   <http://code.google.com/p/protobuf/>
+- protobuf-c <http://code.google.com/p/protobuf-c/>
