@@ -395,46 +395,49 @@ int main(int argc, char **argv) {
 				long int deltachangeset = 0;
 				long int deltauid = 0;
 				long int deltauser_sid = 0;
+
+				DenseNodes *dense = pmsg->primitivegroup[j]->dense;
 				
 
-				for (k = 0; k < pmsg->primitivegroup[j]->dense->n_id; k++) {
+				for (k = 0; k < dense->n_id; k++) {
 					short has_tags = 0;
-					deltaid += pmsg->primitivegroup[j]->dense->id[k];
-					deltalat += pmsg->primitivegroup[j]->dense->lat[k];
-					deltalon += pmsg->primitivegroup[j]->dense->lon[k];
+					deltaid += dense->id[k];
+					deltalat += dense->lat[k];
+					deltalon += dense->lon[k];
 					
 					printf("\t""<node id=\"%li\" lat=\"%.07f\" lon=\"%.07f\"", deltaid,
 							lat_offset + (deltalat * granularity),
 							lon_offset + (deltalon * granularity));
 
-					if (pmsg->primitivegroup[j]->dense->denseinfo) {
+					if (dense->denseinfo) {
 						char *timestamp;
+						DenseInfo *denseinfo = dense->denseinfo;
 
-						deltatimestamp += pmsg->primitivegroup[j]->dense->denseinfo->timestamp[k];
-						deltachangeset += pmsg->primitivegroup[j]->dense->denseinfo->changeset[k];
-						deltauid += pmsg->primitivegroup[j]->dense->denseinfo->uid[k];
-						deltauser_sid += pmsg->primitivegroup[j]->dense->denseinfo->user_sid[k];
+						deltatimestamp += denseinfo->timestamp[k];
+						deltachangeset += denseinfo->changeset[k];
+						deltauid += denseinfo->uid[k];
+						deltauser_sid += denseinfo->user_sid[k];
 
 						timestamp = deltatime2timestamp(deltatimestamp * (pmsg->date_granularity / 1000));
 
 						printf(" version=\"%d\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%s\"",
-							(int) pmsg->primitivegroup[j]->dense->denseinfo->version[k], deltachangeset,
+							(int) denseinfo->version[k], deltachangeset,
 							(int) pmsg->stringtable->s[deltauser_sid].len,
 							pmsg->stringtable->s[deltauser_sid].data, deltauid, timestamp);
 
 						free(timestamp);
 					}
 
-					if (l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
-						while (pmsg->primitivegroup[j]->dense->keys_vals[l] != 0 &&
-						       l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
+					if (l < dense->n_keys_vals) {
+						while (dense->keys_vals[l] != 0 &&
+						       l < dense->n_keys_vals) {
 							if (has_tags == 0) {
 								has_tags++;
 								puts(">");
 							}
 
-						       	int m =  pmsg->primitivegroup[j]->dense->keys_vals[l];
-						       	int n =  pmsg->primitivegroup[j]->dense->keys_vals[l+1];
+						       	int m =  dense->keys_vals[l];
+						       	int n =  dense->keys_vals[l+1];
 							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
 								(int) pmsg->stringtable->s[m].len, 
 								pmsg->stringtable->s[m].data, 
