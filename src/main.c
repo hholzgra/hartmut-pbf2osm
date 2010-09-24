@@ -27,10 +27,10 @@ char * deltatime2timestamp(const long int deltatimestamp) {
   return timestamp;
 }
 
-char * handleCompressedBlob (Blob *bmsg) {
+unsigned char * handleCompressedBlob (Blob *bmsg) {
 	if (bmsg->has_zlib_data) {
 		int ret;
-		char *uncompressed;
+		unsigned char *uncompressed;
 		z_stream strm;
 		strm.zalloc = Z_NULL;
 		strm.zfree = Z_NULL;
@@ -38,7 +38,7 @@ char * handleCompressedBlob (Blob *bmsg) {
 		strm.avail_in = bmsg->zlib_data.len;
 		strm.next_in = bmsg->zlib_data.data;
 		strm.avail_out = bmsg->raw_size;
-		uncompressed = (char *) malloc(bmsg->raw_size * sizeof(char));
+		uncompressed = (unsigned char *) malloc(bmsg->raw_size * sizeof(char));
 		if (uncompressed == NULL) {
 			fprintf(stderr, "Error allocating the decompression buffer\n");
 			return NULL;
@@ -72,6 +72,8 @@ char * handleCompressedBlob (Blob *bmsg) {
 		fprintf(stderr, "We cannot handle the %d non-raw bytes yet...\n", bmsg->raw_size);
 		return NULL;
 	}
+
+	return NULL;
 }
 
 int main(int argc, char **argv) {
@@ -81,8 +83,8 @@ int main(int argc, char **argv) {
 
 
 	char lenbuf[4];
-	char *bhbuf = NULL;
-	char *bbuf = NULL;
+	unsigned char *bhbuf = NULL;
+	unsigned char *bbuf = NULL;
 
 	unsigned char c;
 
@@ -110,7 +112,7 @@ int main(int argc, char **argv) {
 
 	
 	/* Since we know the length of the BlockHeader now, we can allocate it */
-	bhbuf =  (char *) malloc(length * sizeof(char));
+	bhbuf =  (unsigned char *) malloc(length * sizeof(char));
 	if (bhbuf == NULL) {
 		fprintf (stderr, "Error allocating BlockHeader buffer\n");
 		return 1;
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
 	block_header__free_unpacked (bhmsg, &protobuf_c_system_allocator);
 
 	/* We are now reading the 'Blob' */
-	bbuf = (char *) malloc(length * sizeof(char *));
+	bbuf = (unsigned char *) malloc(length * sizeof(char *));
 	for (i = 0; i < length && (c=fgetc(stdin)) != EOF; i++) {
 		bbuf[i] = c;
 	}
@@ -152,7 +154,7 @@ int main(int argc, char **argv) {
 	}
 	free(bbuf);
 	
-	char *uncompressed;
+	unsigned char *uncompressed;
 	if (bmsg->has_raw) {
 		uncompressed = bmsg->raw.data;
 	} else {
