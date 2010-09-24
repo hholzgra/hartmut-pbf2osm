@@ -21,7 +21,7 @@
 #define OUR_TOOL "pbf2osm"
 #define NANO_DEGREE .000000001
 #define MAX_BLOCK_HEADER_SIZE	64*1024
-//#define MAX_BLOB_SIZE		32*1024*1024
+#define MAX_BLOB_SIZE		32*1024*1024
 
 /* 
  * (Inline) function to convert a number of seconds since the epoch to
@@ -151,6 +151,10 @@ int main(int argc, char **argv) {
 
 	length = bhmsg->datasize;
 	if (verbose) fprintf(stderr, "Type: %s\nLength: %u\n", bhmsg->type, length);
+	if (length <= 0 || length > MAX_BLOB_SIZE) {
+		fprintf(stderr, "Blob isn't present or exceeds minimum/maximum size\n");
+		return 1;
+	}
 
 	if (strcmp(bhmsg->type, "OSMHeader") == 0) {
 		state = osmheader;
