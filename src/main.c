@@ -8,7 +8,8 @@
 
 #include <zlib.h>
 
-#define NANO_DEGREE .000000001f
+#define OUR_TOOL "pbf2osm"
+#define NANO_DEGREE .000000001
 #define MAX_BLOCK_HEADER_SIZE	64*1024
 //#define MAX_BLOB_SIZE		32*1024*1024
 
@@ -97,6 +98,9 @@ int main(int argc, char **argv) {
 		osmdata
 	} state;
 
+	puts("<?xml version='1.0' encoding='UTF-8'?>");
+	puts("<osm version=\"0.6\" generator=\"" OUR_TOOL "\">");
+
 	do {
 	/* First we are going to receive the size of the BlockHeader */
 	for (i = 0; i < 4 && (c=fgetc(stdin)) != EOF; i++) {
@@ -179,14 +183,18 @@ int main(int argc, char **argv) {
 		header_block__free_unpacked (hmsg, &protobuf_c_system_allocator);
 	} else if (state == osmdata) {
 		unsigned int j = 0;
-		double granularity;
+		double lat_offset, lon_offset, granularity;
+
 		PrimitiveBlock *pmsg = primitive_block__unpack (NULL, bmsg->raw_size, uncompressed);
 		if (pmsg == NULL) {
 			fprintf(stderr, "Error unpacking PrimitiveBlock message\n");
 			return 1;
 		}
 
-		granularity = pmsg->granularity * NANO_DEGREE;
+		lat_offset = NANO_DEGREE * pmsg->lat_offset;
+		lon_offset = NANO_DEGREE * pmsg->lon_offset;
+		granularity = NANO_DEGREE * pmsg->granularity;
+
 		fprintf(stderr, "\t""Granularity: %d""\n", pmsg->granularity);
 		fprintf(stderr, "\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
 		for (j = 0; j < pmsg->n_primitivegroup; j++) {
@@ -204,8 +212,11 @@ int main(int argc, char **argv) {
 				int k;
 				for (k = 0; k < pmsg->primitivegroup[j]->n_nodes; k++) {
 					Node *node = pmsg->primitivegroup[j]->nodes[k];
-					printf("<node id=\"%li\" lat=\"%f\" lon=\"%f\"",
-						node->id, granularity * node->lat, granularity * node->lon);
+
+					printf("\t""<node id=\"%li\" lat=\"%.07f\" lon=\"%.07f\"",
+						node->id,
+						lat_offset + (node->lat * granularity),
+						lon_offset + (node->lon * granularity));
 					if (node->info) {
 						Info *info = node->info;
 						if (info->has_version) {
@@ -222,7 +233,7 @@ int main(int argc, char **argv) {
 							printf(" uid\"%d\"", (int) info->uid);
 						}
 						if (info->has_timestamp) {
-							char *timestamp = deltatime2timestamp(info->timestamp);
+							char *timestamp = deltatime2timestamp(info->timestamp * (pmsg->date_granularity / 1000));
 							printf(" timestamp=\"%s\"", timestamp);
 							free(timestamp);
 						}
@@ -239,12 +250,12 @@ int main(int argc, char **argv) {
 							ProtobufCBinaryData key = pmsg->stringtable->s[node->keys[l]];
 							ProtobufCBinaryData val = pmsg->stringtable->s[node->vals[l]];
 
-							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\" />""\n",
+							printf ("\t\t""<tag k=\"%.*s\" v=\"%.*s\" />""\n",
 								(int) key.len, key.data, 
 								(int) val.len, val.data);
 						}
 
-						puts("</node>");
+						puts("\t""</node>");
 					}
 				}
 			}
@@ -253,7 +264,7 @@ int main(int argc, char **argv) {
 				int k;
 				for (k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
 					Way *way = pmsg->primitivegroup[j]->ways[k];
-					printf("<way id=\"%li\"", way->id);
+					printf("\t""<way id=\"%li\"", way->id);
 					if (way->info) {
 						Info *info = way->info;
 						if (info->has_version) {
@@ -270,7 +281,7 @@ int main(int argc, char **argv) {
 							printf(" uid=\"%d\"", (int) info->uid);
 						}
 						if (info->has_timestamp) {
-							char *timestamp = deltatime2timestamp(info->timestamp);
+							char *timestamp = deltatime2timestamp(info->timestamp * (pmsg->date_granularity / 1000));
 							printf(" timestamp=\"%s\"", timestamp);
 							free(timestamp);
 						}
@@ -286,19 +297,19 @@ int main(int argc, char **argv) {
 						
 						for (l = 0; l < way->n_refs; l++) {
 							deltaref += way->refs[l];
-							printf ("\t""<nd ref=\"%li\"/>""\n", deltaref);
+							printf ("\t\t""<nd ref=\"%li\"/>""\n", deltaref);
 						}
 
 						for (l = 0; l < way->n_keys; l++) {
 							ProtobufCBinaryData key = pmsg->stringtable->s[way->keys[l]];
 							ProtobufCBinaryData val = pmsg->stringtable->s[way->vals[l]];
 
-							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
+							printf ("\t\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
 								(int) key.len, key.data, 
 								(int) val.len, val.data);
 						}
 
-						puts("</way>");
+						puts("\t""</way>");
 					}
 				}
 			}
@@ -324,7 +335,7 @@ int main(int argc, char **argv) {
 							printf(" uid=\"%d\"", (int) info->uid);
 						}
 						if (info->has_timestamp) {
-							char *timestamp = deltatime2timestamp(info->timestamp);
+							char *timestamp = deltatime2timestamp(info->timestamp * (pmsg->date_granularity / 1000));
 							printf(" timestamp=\"%s\"", timestamp);
 							free(timestamp);
 						}
@@ -357,7 +368,7 @@ int main(int argc, char **argv) {
 									fprintf(stderr, "Unsupported type: %u""\n", relation->types[l]);
 									return 1;
 							}
-							printf ("\t""<member type=\"%s\" ref=\"%li\" role=\"%.*s\"/>""\n",
+							printf ("\t\t""<member type=\"%s\" ref=\"%li\" role=\"%.*s\"/>""\n",
 									type, deltamemids, (int) role.len, role.data);
 						}
 
@@ -365,7 +376,7 @@ int main(int argc, char **argv) {
 							ProtobufCBinaryData key = pmsg->stringtable->s[relation->keys[l]];
 							ProtobufCBinaryData val = pmsg->stringtable->s[relation->vals[l]];
 
-							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
+							printf ("\t\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
 								(int) key.len, key.data, 
 								(int) val.len, val.data);
 						}
@@ -380,32 +391,34 @@ int main(int argc, char **argv) {
 				unsigned long int deltaid = 0;
 				long int deltalat = 0;
 				long int deltalon = 0;
-				long int deltaversion = 0;
 				long int deltatimestamp = 0;
 				long int deltachangeset = 0;
 				long int deltauid = 0;
 				long int deltauser_sid = 0;
+				
 
 				for (k = 0; k < pmsg->primitivegroup[j]->dense->n_id; k++) {
 					short has_tags = 0;
 					deltaid += pmsg->primitivegroup[j]->dense->id[k];
 					deltalat += pmsg->primitivegroup[j]->dense->lat[k];
 					deltalon += pmsg->primitivegroup[j]->dense->lon[k];
-						
-					printf("<node id=\"%li\" lat=\"%f\" lon=\"%f\"", deltaid, granularity*deltalat, granularity*deltalon);
+					
+					printf("\t""<node id=\"%li\" lat=\"%.07f\" lon=\"%.07f\"", deltaid,
+							lat_offset + (deltalat * granularity),
+							lon_offset + (deltalon * granularity));
+
 					if (pmsg->primitivegroup[j]->dense->denseinfo) {
 						char *timestamp;
 
-						deltaversion += pmsg->primitivegroup[j]->dense->denseinfo->version[k];
 						deltatimestamp += pmsg->primitivegroup[j]->dense->denseinfo->timestamp[k];
 						deltachangeset += pmsg->primitivegroup[j]->dense->denseinfo->changeset[k];
 						deltauid += pmsg->primitivegroup[j]->dense->denseinfo->uid[k];
 						deltauser_sid += pmsg->primitivegroup[j]->dense->denseinfo->user_sid[k];
 
-						timestamp = deltatime2timestamp(deltatimestamp);
+						timestamp = deltatime2timestamp(deltatimestamp * (pmsg->date_granularity / 1000));
 
-						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%s\"",
-							deltaversion, deltachangeset,
+						printf(" version=\"%d\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%s\"",
+							(int) pmsg->primitivegroup[j]->dense->denseinfo->version[k], deltachangeset,
 							(int) pmsg->stringtable->s[deltauser_sid].len,
 							pmsg->stringtable->s[deltauser_sid].data, deltauid, timestamp);
 
@@ -435,7 +448,7 @@ int main(int argc, char **argv) {
 					if (has_tags == 0) {
 						puts("/>");
 					} else {
-						puts("</node>");
+						puts("\t""</node>");
 					} 
 				}
 			}
@@ -448,4 +461,6 @@ int main(int argc, char **argv) {
 
 
 	} while (c != EOF);
+
+	puts("</osm>");
 }
