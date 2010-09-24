@@ -65,10 +65,10 @@ unsigned char * handleCompressedBlob (Blob *bmsg) {
 		return uncompressed;
 	} else
 	if (bmsg->has_lzma_data) {
-		printf("LZMA data\n");
+		fprintf(stderr, "LZMA data\n");
 	} else
 	if (bmsg->has_bzip2_data) {
-		printf("bzip2 data\n");
+		fprintf(stderr, "bzip2 data\n");
 	} else
 	{
 		fprintf(stderr, "We cannot handle the %d non-raw bytes yet...\n", bmsg->raw_size);
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
 	length = ntohl(*((uint32_t *) lenbuf));		// convert the buffer to a value
 
-	printf("Length BlockHeader: %d\n", length);
+	fprintf(stderr, "Length BlockHeader: %d\n", length);
 
 	if (length <= 0 || length > MAX_BLOCK_HEADER_SIZE) {
 		fprintf(stderr, "Block Header isn't present or exceeds maximum size\n");
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 	}
 
 	length = bhmsg->datasize;
-	printf("Type: %s\nLength: %u\n", bhmsg->type, length);
+	fprintf(stderr, "Type: %s\nLength: %u\n", bhmsg->type, length);
 
 	if (strcmp(bhmsg->type, "OSMHeader") == 0) {
 		state = osmheader;
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
-		printf("%s\n", hmsg->required_features[0]);
+		fprintf(stderr, "%s\n", hmsg->required_features[0]);
 
 		header_block__free_unpacked (hmsg, &protobuf_c_system_allocator);
 	} else if (state == osmdata) {
@@ -187,8 +187,8 @@ int main(int argc, char **argv) {
 		}
 
 		granularity = pmsg->granularity * NANO_DEGREE;
-		printf("\t""Granularity: %d""\n", pmsg->granularity);
-		printf("\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
+		fprintf(stderr, "\t""Granularity: %d""\n", pmsg->granularity);
+		fprintf(stderr, "\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
 		for (j = 0; j < pmsg->n_primitivegroup; j++) {
 			fprintf(stderr,"\t\t""Nodes: %li""\n"\
 			       "\t\t""Ways: %li""\n"\
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 						}
 						if (info->has_timestamp) {
 							char *timestamp = deltatime2timestamp(info->timestamp);
-							printf(" \"%s\"", timestamp);
+							printf(" timestamp=\"%s\"", timestamp);
 							free(timestamp);
 						}
 					}
@@ -245,6 +245,60 @@ int main(int argc, char **argv) {
 						}
 
 						puts("</node>");
+					}
+				}
+			}
+			/* else // currently the protocol generators only have one type per primitive block */
+			if (pmsg->primitivegroup[j]->n_ways > 0) {
+				int k;
+				for (k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
+					Way *way = pmsg->primitivegroup[j]->ways[k];
+					printf("<way id=\"%li\"", way->id);
+					if (way->info) {
+						Info *info = way->info;
+						if (info->has_version) {
+							printf(" version=\"%d\"", (int) info->version);
+						}
+						if (info->has_changeset) {
+							printf(" changeset=\"%d\"", (int) info->changeset);
+						}
+						if (info->has_user_sid) {
+							ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
+							printf(" user=\"%.*s\"", (int) user.len, user.data);
+						}
+						if (info->has_uid) {
+							printf(" uid=\"%d\"", (int) info->uid);
+						}
+						if (info->has_timestamp) {
+							char *timestamp = deltatime2timestamp(info->timestamp);
+							printf(" timestamp=\"%s\"", timestamp);
+							free(timestamp);
+						}
+					}
+
+					if ((way->n_keys == 0 || way->n_vals == 0) && way->n_refs == 0) {
+						puts("/>");
+					} else {
+						int l;
+						long int deltaref = 0;
+						
+						puts(">");
+						
+						for (l = 0; l < way->n_refs; l++) {
+							deltaref += way->refs[l];
+							printf ("\t""<nd ref=\"%li\"/>""\n", deltaref);
+						}
+
+						for (l = 0; l < way->n_keys; l++) {
+							ProtobufCBinaryData key = pmsg->stringtable->s[way->keys[l]];
+							ProtobufCBinaryData val = pmsg->stringtable->s[way->vals[l]];
+
+							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
+								(int) key.len, key.data, 
+								(int) val.len, val.data);
+						}
+
+						puts("</way>");
 					}
 				}
 			}
@@ -296,7 +350,7 @@ int main(int argc, char **argv) {
 
 						       	int m =  pmsg->primitivegroup[j]->dense->keys_vals[l];
 						       	int n =  pmsg->primitivegroup[j]->dense->keys_vals[l+1];
-							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\" />""\n",
+							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
 								(int) pmsg->stringtable->s[m].len, 
 								pmsg->stringtable->s[m].data, 
 								(int) pmsg->stringtable->s[n].len,
@@ -307,7 +361,7 @@ int main(int argc, char **argv) {
 					}
 
 					if (has_tags == 0) {
-						puts(" />");
+						puts("/>");
 					} else {
 						puts("</node>");
 					} 
