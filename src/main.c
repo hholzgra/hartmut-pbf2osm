@@ -303,6 +303,78 @@ int main(int argc, char **argv) {
 				}
 			}
 			/* else // currently the protocol generators only have one type per primitive block */
+			if (pmsg->primitivegroup[j]->n_relations > 0) {
+				int k;
+				for (k = 0; k < pmsg->primitivegroup[j]->n_relations; k++) {
+					Relation *relation = pmsg->primitivegroup[j]->relations[k];
+					printf("<relation id=\"%li\"", relation->id);
+					if (relation->info) {
+						Info *info = relation->info;
+						if (info->has_version) {
+							printf(" version=\"%d\"", (int) info->version);
+						}
+						if (info->has_changeset) {
+							printf(" changeset=\"%d\"", (int) info->changeset);
+						}
+						if (info->has_user_sid) {
+							ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
+							printf(" user=\"%.*s\"", (int) user.len, user.data);
+						}
+						if (info->has_uid) {
+							printf(" uid=\"%d\"", (int) info->uid);
+						}
+						if (info->has_timestamp) {
+							char *timestamp = deltatime2timestamp(info->timestamp);
+							printf(" timestamp=\"%s\"", timestamp);
+							free(timestamp);
+						}
+					}
+
+					if ((relation->n_keys == 0 || relation->n_vals == 0) && relation->n_memids == 0) {
+						puts("/>");
+					} else {
+						int l;
+						long int deltamemids = 0;
+						
+						puts(">");
+						
+						for (l = 0; l < relation->n_memids; l++) {
+							char *type;
+							ProtobufCBinaryData role =  pmsg->stringtable->s[relation->roles_sid[l]];
+							deltamemids += relation->memids[l];
+
+							switch (relation->types[l]) {
+								case RELATION__MEMBER_TYPE__NODE:
+									type = "node";
+									break;
+								case RELATION__MEMBER_TYPE__WAY:
+									type = "way";
+									break;
+								case RELATION__MEMBER_TYPE__RELATION:
+									type = "relation";
+									break;
+								default:
+									fprintf(stderr, "Unsupported type: %u""\n", relation->types[l]);
+									return 1;
+							}
+							printf ("\t""<member type=\"%s\" ref=\"%li\" role=\"%.*s\"/>""\n",
+									type, deltamemids, (int) role.len, role.data);
+						}
+
+						for (l = 0; l < relation->n_keys; l++) {
+							ProtobufCBinaryData key = pmsg->stringtable->s[relation->keys[l]];
+							ProtobufCBinaryData val = pmsg->stringtable->s[relation->vals[l]];
+
+							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\"/>""\n",
+								(int) key.len, key.data, 
+								(int) val.len, val.data);
+						}
+
+						puts("</relation>");
+					}
+				}
+			}
+			/* else // currently the protocol generators only have one type per primitive block */
 			if (pmsg->primitivegroup[j]->dense) {
 				int k, l = 0;
 				unsigned long int deltaid = 0;
