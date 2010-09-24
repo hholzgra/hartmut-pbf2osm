@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 		}
 
 		printf("\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
-		while (j < pmsg->n_primitivegroup) {
+		for (j = 0; j < pmsg->n_primitivegroup; j++) {
 			printf("\t\t""Nodes: %li""\n"\
 			       "\t\t""Ways: %li""\n"\
 			       "\t\t""Relations: %li""\n",
@@ -172,7 +172,58 @@ int main(int argc, char **argv) {
 			       		pmsg->primitivegroup[j]->n_nodes),
 			       pmsg->primitivegroup[j]->n_ways,
 			       pmsg->primitivegroup[j]->n_relations);
-			j++;
+
+
+			if (pmsg->primitivegroup[j]->dense) {
+				int k, l = 0;
+				unsigned long int deltaid = 0;
+				long int deltalat = 0;
+				long int deltalon = 0;
+				long int deltaversion = 0;
+				long int deltatimestamp = 0;
+				long int deltachangeset = 0;
+				long int deltauid = 0;
+				long int deltauser_sid = 0;
+
+				for (k = 0; k < pmsg->primitivegroup[j]->dense->n_id; k++) {
+					deltaid += pmsg->primitivegroup[j]->dense->id[k];
+					deltalat += pmsg->primitivegroup[j]->dense->lat[k];
+					deltalon += pmsg->primitivegroup[j]->dense->lon[k];
+						
+					printf("<node id=\"%li\" lat=\"%li\" lon=\"%li\"", deltaid, deltalat, deltalon);
+					if (pmsg->primitivegroup[j]->dense->denseinfo) {
+						deltaversion += pmsg->primitivegroup[j]->dense->denseinfo->version[k];
+						deltatimestamp += pmsg->primitivegroup[j]->dense->denseinfo->timestamp[k];
+						deltachangeset += pmsg->primitivegroup[j]->dense->denseinfo->changeset[k];
+						deltauid += pmsg->primitivegroup[j]->dense->denseinfo->uid[k];
+						deltauser_sid += pmsg->primitivegroup[j]->dense->denseinfo->user_sid[k];
+
+						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\"  uid=\"%li\" timestamp=\"%li\"",
+							deltaversion, deltachangeset,
+							(int) pmsg->stringtable->s[deltauser_sid].len,
+							pmsg->stringtable->s[deltauser_sid].data, deltauid, deltatimestamp);
+
+					}
+					puts(">");
+
+					if (l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
+						while (pmsg->primitivegroup[j]->dense->keys_vals[l] != 0 &&
+						       l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
+						       	int m =  pmsg->primitivegroup[j]->dense->keys_vals[l];
+						       	int n =  pmsg->primitivegroup[j]->dense->keys_vals[l+1];
+							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\" />""\n",
+								(int) pmsg->stringtable->s[m].len, 
+								pmsg->stringtable->s[m].data, 
+								(int) pmsg->stringtable->s[n].len,
+								pmsg->stringtable->s[n].data);
+							l += 2;
+						}
+						l += 1;
+					}
+
+					puts("</node>""\n");
+				}
+			}
 		}
 
 		primitive_block__free_unpacked (pmsg, &protobuf_c_system_allocator);
