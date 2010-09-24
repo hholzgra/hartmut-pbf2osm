@@ -5,6 +5,7 @@
 
 #include <zlib.h>
 
+#define NANO_DEGREE .000000001f
 #define MAX_BLOCK_HEADER_SIZE	64*1024
 //#define MAX_BLOB_SIZE		32*1024*1024
 
@@ -156,12 +157,15 @@ int main(int argc, char **argv) {
 		header_block__free_unpacked (hmsg, &protobuf_c_system_allocator);
 	} else if (state == osmdata) {
 		unsigned int j = 0;
+		double granularity;
 		PrimitiveBlock *pmsg = primitive_block__unpack (NULL, bmsg->raw_size, uncompressed);
 		if (pmsg == NULL) {
 			fprintf(stderr, "Error unpacking PrimitiveBlock message\n");
 			return 1;
 		}
 
+		granularity = pmsg->granularity * NANO_DEGREE;
+		printf("\t""Granularity: %li""\n", pmsg->granularity);
 		printf("\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
 		for (j = 0; j < pmsg->n_primitivegroup; j++) {
 			printf("\t\t""Nodes: %li""\n"\
@@ -186,11 +190,12 @@ int main(int argc, char **argv) {
 				long int deltauser_sid = 0;
 
 				for (k = 0; k < pmsg->primitivegroup[j]->dense->n_id; k++) {
+					short has_tags = 0;
 					deltaid += pmsg->primitivegroup[j]->dense->id[k];
 					deltalat += pmsg->primitivegroup[j]->dense->lat[k];
 					deltalon += pmsg->primitivegroup[j]->dense->lon[k];
 						
-					printf("<node id=\"%li\" lat=\"%li\" lon=\"%li\"", deltaid, deltalat, deltalon);
+					printf("<node id=\"%li\" lat=\"%f\" lon=\"%f\"", deltaid, granularity*deltalat, granularity*deltalon);
 					if (pmsg->primitivegroup[j]->dense->denseinfo) {
 						deltaversion += pmsg->primitivegroup[j]->dense->denseinfo->version[k];
 						deltatimestamp += pmsg->primitivegroup[j]->dense->denseinfo->timestamp[k];
@@ -198,17 +203,21 @@ int main(int argc, char **argv) {
 						deltauid += pmsg->primitivegroup[j]->dense->denseinfo->uid[k];
 						deltauser_sid += pmsg->primitivegroup[j]->dense->denseinfo->user_sid[k];
 
-						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\"  uid=\"%li\" timestamp=\"%li\"",
+						printf(" version=\"%li\" changeset=\"%li\" user=\"%.*s\" uid=\"%li\" timestamp=\"%li\"",
 							deltaversion, deltachangeset,
 							(int) pmsg->stringtable->s[deltauser_sid].len,
 							pmsg->stringtable->s[deltauser_sid].data, deltauid, deltatimestamp);
 
 					}
-					puts(">");
 
 					if (l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
 						while (pmsg->primitivegroup[j]->dense->keys_vals[l] != 0 &&
 						       l < pmsg->primitivegroup[j]->dense->n_keys_vals) {
+							if (has_tags == 0) {
+								has_tags = 1;
+								puts(">");
+							}
+
 						       	int m =  pmsg->primitivegroup[j]->dense->keys_vals[l];
 						       	int n =  pmsg->primitivegroup[j]->dense->keys_vals[l+1];
 							printf ("\t""<tag k=\"%.*s\" v=\"%.*s\" />""\n",
@@ -221,7 +230,11 @@ int main(int argc, char **argv) {
 						l += 1;
 					}
 
-					puts("</node>""\n");
+					if (has_tags == 0) {
+						puts(" />");
+					} else {
+						puts("</node>");
+					} 
 				}
 			}
 		}
