@@ -5,3 +5,11 @@ This programs converts pbf files back to osm based XML files. At the time of wri
 
 - protobuf   <http://code.google.com/p/protobuf/>
 - protobuf-c <http://code.google.com/p/protobuf-c/>
+
+
+Git Submodules
+==============
+To prevent bundling OSM-Binary we use a git submodule. To fetch the submodule
+
+git submodule init
+git submodule update
