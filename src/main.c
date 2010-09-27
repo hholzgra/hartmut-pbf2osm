@@ -199,22 +199,22 @@ int main(int argc, char **argv) {
 
         header_block__free_unpacked (hmsg, &protobuf_c_system_allocator);
     } else if (state == osmdata) {
-        unsigned int j = 0;
-        double lat_offset, lon_offset, granularity;
-
+        /*
+         * Unpack Block and check if all went well
+         */
         PrimitiveBlock *pmsg = primitive_block__unpack (NULL, bmsg->raw_size, uncompressed);
         if (pmsg == NULL) {
             fprintf(stderr, "Error unpacking PrimitiveBlock message\n");
             return 1;
         }
 
-        lat_offset = NANO_DEGREE * pmsg->lat_offset;
-        lon_offset = NANO_DEGREE * pmsg->lon_offset;
-        granularity = NANO_DEGREE * pmsg->granularity;
+        double lat_offset = NANO_DEGREE * pmsg->lat_offset;
+        double lon_offset = NANO_DEGREE * pmsg->lon_offset;
+        double granularity = NANO_DEGREE * pmsg->granularity;
 
         if (verbose) fprintf(stderr, "\t""Granularity: %d""\n", pmsg->granularity);
         if (verbose) fprintf(stderr, "\t""Primitive groups: %li""\n", pmsg->n_primitivegroup);
-        for (j = 0; j < pmsg->n_primitivegroup; j++) {
+        for (unsigned int j = 0; j < pmsg->n_primitivegroup; j++) {
             if (verbose) fprintf(stderr,"\t\t""Nodes: %li""\n"\
                    "\t\t""Ways: %li""\n"\
                    "\t\t""Relations: %li""\n",
@@ -226,8 +226,7 @@ int main(int argc, char **argv) {
 
             /* TODO: Nodes is *untested* */
             if (pmsg->primitivegroup[j]->n_nodes > 0) {
-                int k;
-                for (k = 0; k < pmsg->primitivegroup[j]->n_nodes; k++) {
+                for (int k = 0; k < pmsg->primitivegroup[j]->n_nodes; k++) {
                     Node *node = pmsg->primitivegroup[j]->nodes[k];
 
                     printf("\t""<node id=\"%li\" lat=\"%.07f\" lon=\"%.07f\"",
@@ -258,11 +257,9 @@ int main(int argc, char **argv) {
                     if (node->n_keys == 0 || node->n_vals == 0) {
                         puts(" />");
                     } else {
-                        int l;
-                        
                         puts(">");
 
-                        for (l = 0; l < node->n_keys; l++) {
+                        for (int l = 0; l < node->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[node->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[node->vals[l]];
 
@@ -277,8 +274,7 @@ int main(int argc, char **argv) {
             }
             /* else // currently the protocol generators only have one type per primitive block */
             if (pmsg->primitivegroup[j]->n_ways > 0) {
-                int k;
-                for (k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
+                for (int k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
                     Way *way = pmsg->primitivegroup[j]->ways[k];
                     printf("\t""<way id=\"%li\"", way->id);
                     if (way->info) {
@@ -305,17 +301,16 @@ int main(int argc, char **argv) {
                     if ((way->n_keys == 0 || way->n_vals == 0) && way->n_refs == 0) {
                         puts("/>");
                     } else {
-                        int l;
                         long int deltaref = 0;
                         
                         puts(">");
                         
-                        for (l = 0; l < way->n_refs; l++) {
+                        for (int l = 0; l < way->n_refs; l++) {
                             deltaref += way->refs[l];
                             printf ("\t\t""<nd ref=\"%li\"/>""\n", deltaref);
                         }
 
-                        for (l = 0; l < way->n_keys; l++) {
+                        for (int l = 0; l < way->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[way->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[way->vals[l]];
 
@@ -330,8 +325,7 @@ int main(int argc, char **argv) {
             }
             /* else // currently the protocol generators only have one type per primitive block */
             if (pmsg->primitivegroup[j]->n_relations > 0) {
-                int k;
-                for (k = 0; k < pmsg->primitivegroup[j]->n_relations; k++) {
+                for (int k = 0; k < pmsg->primitivegroup[j]->n_relations; k++) {
                     Relation *relation = pmsg->primitivegroup[j]->relations[k];
                     printf("\t""<relation id=\"%li\"", relation->id);
                     if (relation->info) {
@@ -358,12 +352,11 @@ int main(int argc, char **argv) {
                     if ((relation->n_keys == 0 || relation->n_vals == 0) && relation->n_memids == 0) {
                         puts("/>");
                     } else {
-                        int l;
                         long int deltamemids = 0;
                         
                         puts(">");
                         
-                        for (l = 0; l < relation->n_memids; l++) {
+                        for (int l = 0; l < relation->n_memids; l++) {
                             char *type;
                             ProtobufCBinaryData role =  pmsg->stringtable->s[relation->roles_sid[l]];
                             deltamemids += relation->memids[l];
@@ -386,7 +379,7 @@ int main(int argc, char **argv) {
                                     type, deltamemids, (int) role.len, role.data);
                         }
 
-                        for (l = 0; l < relation->n_keys; l++) {
+                        for (int l = 0; l < relation->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[relation->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[relation->vals[l]];
 
@@ -401,8 +394,7 @@ int main(int argc, char **argv) {
             }
             /* else // currently the protocol generators only have one type per primitive block */
             if (pmsg->primitivegroup[j]->n_changesets > 0) {
-                int k;
-                for (k = 0; k < pmsg->primitivegroup[j]->n_changesets; k++) {
+                for (int k = 0; k < pmsg->primitivegroup[j]->n_changesets; k++) {
                     ChangeSet *changeset = pmsg->primitivegroup[j]->changesets[k];
 
                     printf("\t""<changeset id=\"%li\"", changeset->id);
@@ -443,11 +435,9 @@ int main(int argc, char **argv) {
                     if (changeset->n_keys == 0 || changeset->n_vals == 0) {
                         puts(" />");
                     } else {
-                        int l;
-                        
                         puts(">");
 
-                        for (l = 0; l < changeset->n_keys; l++) {
+                        for (int l = 0; l < changeset->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[changeset->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[changeset->vals[l]];
 
@@ -462,7 +452,7 @@ int main(int argc, char **argv) {
             }
             /* else // currently the protocol generators only have one type per primitive block */
             if (pmsg->primitivegroup[j]->dense) {
-                int k, l = 0;
+                int l = 0;
                 unsigned long int deltaid = 0;
                 long int deltalat = 0;
                 long int deltalon = 0;
@@ -474,7 +464,7 @@ int main(int argc, char **argv) {
                 DenseNodes *dense = pmsg->primitivegroup[j]->dense;
                 
 
-                for (k = 0; k < dense->n_id; k++) {
+                for (int k = 0; k < dense->n_id; k++) {
                     short has_tags = 0;
                     deltaid += dense->id[k];
                     deltalat += dense->lat[k];
