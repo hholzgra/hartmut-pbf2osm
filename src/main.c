@@ -16,6 +16,7 @@
 #include <time.h>
 
 #include <zlib.h>
+#include <bzlib.h>
 
 #define verbose 0
 #define OUR_TOOL "pbf2osm"
@@ -75,7 +76,36 @@ unsigned char * handleCompressedBlob (Blob *bmsg) {
         fprintf(stderr, "LZMA data\n");
     } else
     if (bmsg->has_bzip2_data) {
-        fprintf(stderr, "bzip2 data\n");
+        int ret;
+        char *uncompressed;
+        bz_stream strm;
+        strm.bzalloc = NULL;
+        strm.bzfree = NULL;
+        strm.opaque = NULL;
+        strm.avail_in = bmsg->bzip2_data.len;
+        strm.next_in = (char *) bmsg->bzip2_data.data;
+        strm.avail_out = bmsg->raw_size;
+        uncompressed = (char *) malloc(bmsg->raw_size * sizeof(char));
+        if (uncompressed == NULL) {
+            fprintf(stderr, "Error allocating the decompression buffer\n");
+            return NULL;
+        }
+        strm.next_out = uncompressed;
+
+        ret = BZ2_bzDecompressInit(&strm, 0, 0);
+        if (ret != BZ_OK) {
+            fprintf(stderr, "Bzip2 init failed\n");
+            return NULL;
+        }
+
+        (void)BZ2_bzDecompressEnd(&strm);
+        
+        if (ret != BZ_STREAM_END) {
+            fprintf(stderr, "Bzip2 compression failed\n");
+            return NULL;
+        }
+
+        return (unsigned char *) uncompressed;
     } else
     {
         fprintf(stderr, "We cannot handle the %d non-raw bytes yet...\n", bmsg->raw_size);
@@ -527,4 +557,4 @@ int main(int argc, char **argv) {
 
     } while (c != EOF);
 }
-/* vim: set ts=4 sw=4 tw=79 :*/
+/* vim: set ts=4 sw=4 tw=79 expandtab :*/
