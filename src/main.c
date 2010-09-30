@@ -81,7 +81,7 @@ void deltatime2timestamp(const long int deltatimestamp, char *timestamp) {
     strftime(timestamp, 21, "%Y-%m-%dT%H:%M:%SZ" , ts);
 }
 
-void itoa(int value, int base) {
+void itoa(unsigned int value, unsigned char base) {
     char result[20];
     // check that the base if valid
     // if (base < 2 || base > 36) { *result = '\0'; return result; }
@@ -136,8 +136,8 @@ void printescape(unsigned char *s, unsigned int l) {
                 continue;
             default:
                 fputc_unlocked(s[i], stdout);
-		}
-	}
+        }
+    }
 }
 
 unsigned char * handleCompressedBlob (Blob *bmsg) {
@@ -368,17 +368,17 @@ int main(int argc, char **argv) {
                     if (node->info) {
                         Info *info = node->info;
                         if (info->has_version) {
-                            printnumericattribute("version", (int) info->version);
+                            printnumericattribute("version", info->version);
                         }
                         if (info->has_changeset) {
-                            printnumericattribute("changeset", (int) info->changeset);
+                            printnumericattribute("changeset", info->changeset);
                         }
                         if (info->has_user_sid) {
                             ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
                             printuser(user);
                         }
                         if (info->has_uid) {
-                            printnumericattribute("uid", (int) info->uid);
+                            printnumericattribute("uid", info->uid);
                         }
                         if (info->has_timestamp) {
                             printtimestamp("timestamp", info->timestamp);
@@ -409,17 +409,17 @@ int main(int argc, char **argv) {
                     if (way->info) {
                         Info *info = way->info;
                         if (info->has_version) {
-                            printnumericattribute("version", (int) info->version);
+                            printnumericattribute("version", info->version);
                         }
                         if (info->has_changeset) {
-                            printnumericattribute("changeset", (int) info->changeset);
+                            printnumericattribute("changeset", info->changeset);
                         }
                         if (info->has_user_sid) {
                             ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
                             printuser(user);
                         }
                         if (info->has_uid) {
-                            printnumericattribute("uid", (int) info->uid);
+                            printnumericattribute("uid", info->uid);
                         }
                         if (info->has_timestamp) {
                             printtimestamp("timestamp", info->timestamp);
@@ -457,17 +457,17 @@ int main(int argc, char **argv) {
                     if (relation->info) {
                         Info *info = relation->info;
                         if (info->has_version) {
-                            printnumericattribute("version", (int) info->version);
+                            printnumericattribute("version", info->version);
                         }
                         if (info->has_changeset) {
-                            printnumericattribute("changeset", (int) info->changeset);
+                            printnumericattribute("changeset", info->changeset);
                         }
                         if (info->has_user_sid) {
                             ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
                             printuser(user);
                         }
                         if (info->has_uid) {
-                            printnumericattribute("uid", (int) info->uid);
+                            printnumericattribute("uid", info->uid);
                         }
                         if (info->has_timestamp) {
                             printtimestamp("timestamp", info->timestamp);
@@ -525,17 +525,17 @@ int main(int argc, char **argv) {
                         Info *info = changeset->info;
                         /* Not in Changeset                    
                         if (info->has_version) {
-                            printnumericattribute("version", (int) info->version);
+                            printnumericattribute("version", info->version);
                         }
                         if (info->has_changeset) {
-                            printnumericattribute("changeset", (int) info->changeset);
+                            printnumericattribute("changeset", info->changeset);
                         }*/
                         if (info->has_user_sid) {
                             ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
                             printuser(user);
                         }
                         if (info->has_uid) {
-                            printnumericattribute("uid", (int) info->uid);
+                            printnumericattribute("uid", info->uid);
                         }
                         if (info->has_timestamp) {
                             printtimestamp("created_at", info->timestamp);
@@ -575,16 +575,16 @@ int main(int argc, char **argv) {
                 unsigned long int deltaid = 0;
                 long int deltalat = 0;
                 long int deltalon = 0;
-                long int deltatimestamp = 0;
-                long int deltachangeset = 0;
-                long int deltauid = 0;
-                long int deltauser_sid = 0;
+                unsigned long int deltatimestamp = 0;
+                unsigned long int deltachangeset = 0;
+                unsigned long int deltauid = 0;
+                unsigned long int deltauser_sid = 0;
 
                 DenseNodes *dense = pmsg->primitivegroup[j]->dense;
                 
 
                 for (int k = 0; k < dense->n_id; k++) {
-                    short has_tags = 0;
+                    unsigned char has_tags = 0;
                     deltaid += dense->id[k];
                     deltalat += dense->lat[k];
                     deltalon += dense->lon[k];
@@ -601,7 +601,7 @@ int main(int argc, char **argv) {
                         deltauid += denseinfo->uid[k];
                         deltauser_sid += denseinfo->user_sid[k];
 
-                        printnumericattribute("version", (int) denseinfo->version[k]);
+                        printnumericattribute("version", denseinfo->version[k]);
                         printnumericattribute("changeset", deltachangeset);
                         printuser(pmsg->stringtable->s[deltauser_sid]);
                         printnumericattribute("uid", deltauid);
