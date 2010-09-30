@@ -152,7 +152,7 @@ unsigned char * handleCompressedBlob (Blob *bmsg) {
         strm.avail_in = bmsg->zlib_data.len;
         strm.next_in = bmsg->zlib_data.data;
         strm.avail_out = bmsg->raw_size;
-        uncompressed = (unsigned char *) malloc(bmsg->raw_size * sizeof(char));
+        uncompressed = (unsigned char *) malloc(bmsg->raw_size * sizeof(unsigned char));
         if (uncompressed == NULL) {
             fprintf(stderr, "Error allocating the decompression buffer\n");
             return NULL;
@@ -227,8 +227,7 @@ int main(int argc, char **argv) {
 
 
     char lenbuf[4];
-    unsigned char *bhbuf = NULL;
-    unsigned char *bbuf = NULL;
+    unsigned char *buf = NULL;
 
     unsigned char c;
 
@@ -239,8 +238,7 @@ int main(int argc, char **argv) {
         osmdata
     } state = osmheader;
 
-    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>", stdout);
-    fputs_unlocked("<osm version=\"0.6\" generator=\"" OUR_TOOL "\">", stdout);
+    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" OUR_TOOL "\">\n", stdout);
 
     do {
     /* First we are going to receive the size of the BlockHeader */
@@ -264,19 +262,19 @@ int main(int argc, char **argv) {
 
     
     /* Since we know the length of the BlockHeader now, we can allocate it */
-    bhbuf =  (unsigned char *) malloc(length * sizeof(char));
-    if (bhbuf == NULL) {
+    buf = (unsigned char *) malloc(length * sizeof(unsigned char));
+    if (buf == NULL) {
         fprintf (stderr, "Error allocating BlockHeader buffer\n");
         return 1;
     }
 
     /* We are reading the BlockHeader */
     for (i = 0; i < length && (c=fgetc(stdin)) != EOF; i++) {
-        bhbuf[i] = c;
+        buf[i] = c;
     }
 
-    bhmsg = block_header__unpack (NULL, i, bhbuf);
-    free(bhbuf);
+    bhmsg = block_header__unpack (NULL, i, buf);
+    free(buf);
     if (bhmsg == NULL) {
         fprintf(stderr, "Error unpacking BlockHeader message\n");
         return 1;
@@ -298,17 +296,17 @@ int main(int argc, char **argv) {
     block_header__free_unpacked (bhmsg, &protobuf_c_system_allocator);
 
     /* We are now reading the 'Blob' */
-    bbuf = (unsigned char *) malloc(length * sizeof(char *));
+    buf = (unsigned char *) malloc(length * sizeof(unsigned char *));
     for (i = 0; i < length && (c=fgetc(stdin)) != EOF; i++) {
-        bbuf[i] = c;
+        buf[i] = c;
     }
 
-    bmsg = blob__unpack (NULL, i, bbuf);
+    bmsg = blob__unpack (NULL, i, buf);
     if (bmsg == NULL) {
         fprintf(stderr, "Error unpacking Blob message\n");
         return 1;
     }
-    free(bbuf);
+    free(buf);
     
     unsigned char *uncompressed;
     if (bmsg->has_raw) {
