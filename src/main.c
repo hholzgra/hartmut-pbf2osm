@@ -26,50 +26,47 @@
 #define MAX_BLOB_SIZE 32*1024*1024
 
 #define printtag(key,val) \
-    fputs ("\t\t""<tag k=\"", stdout); \
+    fputs_unlocked ("\t\t""<tag k=\"", stdout); \
     printescape(key.data, key.len); \
-    fputs ("\" v=\"", stdout); \
+    fputs_unlocked ("\" v=\"", stdout); \
     printescape(val.data, val.len); \
-    fputs ("\" />""\n", stdout);
+    fputs_unlocked ("\" />""\n", stdout);
 
 #define printtimestamp(attribute, timestamp) \
     char tsbuf[21]; \
     deltatime2timestamp(timestamp * (pmsg->date_granularity / 1000), tsbuf); \
-    fputs(" "attribute"=\"", stdout); \
-    fputs(tsbuf, stdout); \
-    fputc('"', stdout);
+    fputs_unlocked(" "attribute"=\"", stdout); \
+    fputs_unlocked(tsbuf, stdout); \
+    fputc_unlocked('"', stdout);
 
 #define printuser(user) \
-    fputs(" user=\"", stdout); \
+    fputs_unlocked(" user=\"", stdout); \
     printescape(user.data, user.len); \
-    fputc('"', stdout);
+    fputc_unlocked('"', stdout);
 
 #define printnumericattribute(attribute, value) \
-    fprintf(stdout, " "attribute"=\"%d\"", (int) value);
-//    fputs(" "attribute"=\"", stdout); \
-//    itoa(value, 10); \
-//    fputc('"', stdout);
+    fputs_unlocked(" "attribute"=\"", stdout); \
+    itoa(value, 10); \
+    fputc_unlocked('"', stdout);
 
 #define printsotid(name, id) \
-    fprintf(stdout, "\t<"name" id=\"%d\"", (int) id);
-//    fputs("\t<"name" id=\"", stdout); \
-//    itoa(id, 10); \
-//    fputc('"', stdout);
+    fputs_unlocked("\t<"name" id=\"", stdout); \
+    itoa(id, 10); \
+    fputc_unlocked('"', stdout);
 
 #define printnd(ref) \
-    fprintf(stdout, "\t\t<nd ref=\"%d\"", (int) ref);
-//    fputs("\t\t""<nd ref=\"", stdout); \
-//    itoa(ref, 10); \
-//    fputs("/>""\n", stdout);
+    fputs_unlocked("\t\t""<nd ref=\"", stdout); \
+    itoa(ref, 10); \
+    fputs_unlocked("/>""\n", stdout);
 
 #define printmember(type, ref, role); \
-    fputs("\t\t""<member type=\"", stdout); \
-    fputs(type, stdout); \
-    fputs("\" ref=\"", stdout); \
+    fputs_unlocked("\t\t""<member type=\"", stdout); \
+    fputs_unlocked(type, stdout); \
+    fputs_unlocked("\" ref=\"", stdout); \
     itoa(ref, 10); \
-    fputs("\" role=\"", stdout); \
+    fputs_unlocked("\" role=\"", stdout); \
     printescape(role.data, role.len); \
-    fputs("\"/>""\n", stdout);
+    fputs_unlocked("\"/>""\n", stdout);
 
 /* 
  * (Inline) function to convert a number of seconds since the epoch to
@@ -107,29 +104,38 @@ void itoa(int value, int base) {
        *ptr1++ = tmp_char;
     }
     
-    fputs(result, stdout);
+    fputs_unlocked(result, stdout);
 }
 
 void printescape(unsigned char *s, unsigned int l) {
     for (unsigned int i = 0; i < l; i++) {
         switch (s[i]) {
             case '<':
-                fputs("&#60;", stdout);
+                fputs_unlocked("&#60;", stdout);
 				continue;
             case '>':
-                fputs("&#62;", stdout);
+                fputs_unlocked("&#62;", stdout);
                 continue;
             case '&':
-                fputs("&#38;", stdout);
+                fputs_unlocked("&#38;", stdout);
                 continue;
             case '\'':
-                fputs("&#39;", stdout);
+                fputs_unlocked("&#39;", stdout);
                 continue;
             case '"':
-                fputs("&#34;", stdout);
+                fputs_unlocked("&#34;", stdout);
+                continue;
+            case '\r':
+                fputs_unlocked("&#13;", stdout);
+                continue;
+            case '\n':
+                fputs_unlocked("&#10;", stdout);
+                continue;
+            case '\t':
+                fputs_unlocked("&#9;", stdout);
                 continue;
             default:
-                fputc(s[i], stdout);
+                fputc_unlocked(s[i], stdout);
 		}
 	}
 }
@@ -232,8 +238,8 @@ int main(int argc, char **argv) {
         osmdata
     } state = osmheader;
 
-    fputs("<?xml version='1.0' encoding='UTF-8'?>", stdout);
-    fputs("<osm version=\"0.6\" generator=\"" OUR_TOOL "\">", stdout);
+    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>", stdout);
+    fputs_unlocked("<osm version=\"0.6\" generator=\"" OUR_TOOL "\">", stdout);
 
     do {
     /* First we are going to receive the size of the BlockHeader */
@@ -247,7 +253,7 @@ int main(int argc, char **argv) {
 
     if (length <= 0 || length > MAX_BLOCK_HEADER_SIZE) {
         if (length == -1) {
-            fputs("</osm>", stdout);
+            fputs_unlocked("</osm>", stdout);
             return 0;
         }
 
@@ -380,9 +386,9 @@ int main(int argc, char **argv) {
                     }
 
                     if (node->n_keys == 0 || node->n_vals == 0) {
-                        fputs("/>", stdout);
+                        fputs_unlocked("/>", stdout);
                     } else {
-                        fputc('>', stdout);
+                        fputc_unlocked('>', stdout);
 
                         for (int l = 0; l < node->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[node->keys[l]];
@@ -391,7 +397,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs("\t""</node>", stdout);
+                        fputs_unlocked("\t""</node>", stdout);
                     }
                 }
             }
@@ -421,11 +427,11 @@ int main(int argc, char **argv) {
                     }
 
                     if ((way->n_keys == 0 || way->n_vals == 0) && way->n_refs == 0) {
-                        fputs("/>", stdout);
+                        fputs_unlocked("/>", stdout);
                     } else {
                         long int deltaref = 0;
                         
-                        fputc('>', stdout);
+                        fputc_unlocked('>', stdout);
                         
                         for (int l = 0; l < way->n_refs; l++) {
                             deltaref += way->refs[l];
@@ -439,7 +445,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs("\t""</way>", stdout);
+                        fputs_unlocked("\t""</way>", stdout);
                     }
                 }
             }
@@ -469,11 +475,11 @@ int main(int argc, char **argv) {
                     }
 
                     if ((relation->n_keys == 0 || relation->n_vals == 0) && relation->n_memids == 0) {
-                        fputs("/>", stdout);
+                        fputs_unlocked("/>", stdout);
                     } else {
                         long int deltamemids = 0;
                         
-                        fputc('>', stdout);
+                        fputc_unlocked('>', stdout);
                         
                         for (int l = 0; l < relation->n_memids; l++) {
                             char *type;
@@ -505,7 +511,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs("\t""</relation>", stdout);
+                        fputs_unlocked("\t""</relation>", stdout);
                     }
                 }
             }
@@ -548,9 +554,9 @@ int main(int argc, char **argv) {
                         lon_offset + (changeset->bbox->top * granularity));
 
                     if (changeset->n_keys == 0 || changeset->n_vals == 0) {
-                        fputs("/>", stdout);
+                        fputs_unlocked("/>", stdout);
                     } else {
-                        fputc('>', stdout);
+                        fputc_unlocked('>', stdout);
 
                         for (int l = 0; l < changeset->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[changeset->keys[l]];
@@ -559,7 +565,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs("\t""</changeset>", stdout);
+                        fputs_unlocked("\t""</changeset>", stdout);
                     }
                 }
             }
@@ -606,7 +612,7 @@ int main(int argc, char **argv) {
                         while (dense->keys_vals[l] != 0 && l < dense->n_keys_vals) {
                             if (has_tags < 1) {
                                 has_tags++;
-                                fputc('>', stdout);
+                                fputc_unlocked('>', stdout);
                             }
                             
                             ProtobufCBinaryData key = pmsg->stringtable->s[dense->keys_vals[l]];
@@ -620,9 +626,9 @@ int main(int argc, char **argv) {
                     }
 
                     if (has_tags < 1) {
-                        fputs("/>", stdout);
+                        fputs_unlocked("/>", stdout);
                     } else {
-                        fputs("\t""</node>", stdout);
+                        fputs_unlocked("\t""</node>", stdout);
                     } 
                 }
             }
