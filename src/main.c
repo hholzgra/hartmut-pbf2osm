@@ -400,7 +400,7 @@ int main(int argc, char **argv) {
                     }
                 }
             }
-            /* else // currently the protocol generators only have one type per primitive block */
+            else
             if (pmsg->primitivegroup[j]->n_ways > 0) {
                 for (int k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
                     Way *way = pmsg->primitivegroup[j]->ways[k];
@@ -448,7 +448,7 @@ int main(int argc, char **argv) {
                     }
                 }
             }
-            /* else // currently the protocol generators only have one type per primitive block */
+            else
             if (pmsg->primitivegroup[j]->n_relations > 0) {
                 for (int k = 0; k < pmsg->primitivegroup[j]->n_relations; k++) {
                     Relation *relation = pmsg->primitivegroup[j]->relations[k];
@@ -514,7 +514,7 @@ int main(int argc, char **argv) {
                     }
                 }
             }
-            /* else // currently the protocol generators only have one type per primitive block */
+            else
             if (pmsg->primitivegroup[j]->n_changesets > 0) {
                 for (int k = 0; k < pmsg->primitivegroup[j]->n_changesets; k++) {
                     ChangeSet *changeset = pmsg->primitivegroup[j]->changesets[k];
@@ -568,7 +568,7 @@ int main(int argc, char **argv) {
                     }
                 }
             }
-            /* else // currently the protocol generators only have one type per primitive block */
+            else
             if (pmsg->primitivegroup[j]->dense) {
                 int l = 0;
                 unsigned long int deltaid = 0;
