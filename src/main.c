@@ -46,24 +46,24 @@
 
 #define printnumericattribute(attribute, value) \
     fputs_unlocked(" "attribute"=\"", stdout); \
-    itoa(value, 10); \
+    itoa(value); \
     fputc_unlocked('"', stdout);
 
 #define printsotid(name, id) \
     fputs_unlocked("\t<"name" id=\"", stdout); \
-    itoa(id, 10); \
+    itoa(id); \
     fputc_unlocked('"', stdout);
 
 #define printnd(ref) \
     fputs_unlocked("\t\t""<nd ref=\"", stdout); \
-    itoa(ref, 10); \
+    itoa(ref); \
     fputs_unlocked("/>""\n", stdout);
 
 #define printmember(type, ref, role); \
     fputs_unlocked("\t\t""<member type=\"", stdout); \
     fputs_unlocked(type, stdout); \
     fputs_unlocked("\" ref=\"", stdout); \
-    itoa(ref, 10); \
+    itoa(ref); \
     fputs_unlocked("\" role=\"", stdout); \
     printescape(role.data, role.len); \
     fputs_unlocked("\"/>""\n", stdout);
@@ -81,8 +81,9 @@ void deltatime2timestamp(const long int deltatimestamp, char *timestamp) {
     strftime(timestamp, 21, "%Y-%m-%dT%H:%M:%SZ" , ts);
 }
 
-void itoa(unsigned int value, unsigned char base) {
+void itoa(unsigned int value) {
     char result[20];
+    unsigned char base = 10;
     // check that the base if valid
     // if (base < 2 || base > 36) { *result = '\0'; return result; }
     
