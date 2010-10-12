@@ -57,7 +57,7 @@
 #define printnd(ref) \
     fputs_unlocked("\t\t""<nd ref=\"", stdout); \
     itoa(ref); \
-    fputs_unlocked("/>""\n", stdout);
+    fputs_unlocked("\"/>""\n", stdout);
 
 #define printmember(type, ref, role); \
     fputs_unlocked("\t\t""<member type=\"", stdout); \
