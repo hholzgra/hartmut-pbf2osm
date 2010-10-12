@@ -385,9 +385,9 @@ int main(int argc, char **argv) {
                     }
 
                     if (node->n_keys == 0 || node->n_vals == 0) {
-                        fputs_unlocked("/>", stdout);
+                        fputs_unlocked("/>""\n", stdout);
                     } else {
-                        fputc_unlocked('>', stdout);
+                        fputs_unlocked(">""\n", stdout);
 
                         for (int l = 0; l < node->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[node->keys[l]];
