@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
         osmdata
     } state = osmheader;
 
-    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" OUR_TOOL "\">\n", stdout);
+    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" OUR_TOOL "\">""\n", stdout);
 
     do {
     /* First we are going to receive the size of the BlockHeader */
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
 
     if (length <= 0 || length > MAX_BLOCK_HEADER_SIZE) {
         if (length == -1) {
-            fputs_unlocked("</osm>", stdout);
+            fputs_unlocked("</osm>""\n", stdout);
             return 0;
         }
 
@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs_unlocked("\t""</node>", stdout);
+                        fputs_unlocked("\t""</node>""\n", stdout);
                     }
                 }
             }
@@ -426,11 +426,11 @@ int main(int argc, char **argv) {
                     }
 
                     if ((way->n_keys == 0 || way->n_vals == 0) && way->n_refs == 0) {
-                        fputs_unlocked("/>", stdout);
+                        fputs_unlocked("/>""\n", stdout);
                     } else {
                         long int deltaref = 0;
                         
-                        fputc_unlocked('>', stdout);
+                        fputs_unlocked(">""\n", stdout);
                         
                         for (int l = 0; l < way->n_refs; l++) {
                             deltaref += way->refs[l];
@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs_unlocked("\t""</way>", stdout);
+                        fputs_unlocked("\t""</way>""\n", stdout);
                     }
                 }
             }
@@ -474,11 +474,11 @@ int main(int argc, char **argv) {
                     }
 
                     if ((relation->n_keys == 0 || relation->n_vals == 0) && relation->n_memids == 0) {
-                        fputs_unlocked("/>", stdout);
+                        fputs_unlocked("/>""\n", stdout);
                     } else {
                         long int deltamemids = 0;
                         
-                        fputc_unlocked('>', stdout);
+                        fputs_unlocked(">""\n", stdout);
                         
                         for (int l = 0; l < relation->n_memids; l++) {
                             char *type;
@@ -510,7 +510,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs_unlocked("\t""</relation>", stdout);
+                        fputs_unlocked("\t""</relation>""\n", stdout);
                     }
                 }
             }
@@ -553,9 +553,9 @@ int main(int argc, char **argv) {
                         lon_offset + (changeset->bbox->top * granularity));
 
                     if (changeset->n_keys == 0 || changeset->n_vals == 0) {
-                        fputs_unlocked("/>", stdout);
+                        fputs_unlocked("/>""\n", stdout);
                     } else {
-                        fputc_unlocked('>', stdout);
+                        fputs_unlocked(">""\n", stdout);
 
                         for (int l = 0; l < changeset->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[changeset->keys[l]];
@@ -564,7 +564,7 @@ int main(int argc, char **argv) {
                             printtag(key, val);
                         }
 
-                        fputs_unlocked("\t""</changeset>", stdout);
+                        fputs_unlocked("\t""</changeset>""\n", stdout);
                     }
                 }
             }
@@ -625,9 +625,9 @@ int main(int argc, char **argv) {
                     }
 
                     if (has_tags < 1) {
-                        fputs_unlocked("/>", stdout);
+                        fputs_unlocked("/>""\n", stdout);
                     } else {
-                        fputs_unlocked("\t""</node>", stdout);
+                        fputs_unlocked("\t""</node>""\n", stdout);
                     } 
                 }
             }
