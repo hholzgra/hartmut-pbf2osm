@@ -372,6 +372,7 @@ int main(int argc, char **argv) {
                         if (info->has_changeset) {
                             printnumericattribute("changeset", info->changeset);
                         }
+			if (info->has_uid && info->uid != -1) { // Idiots of osmosis failed to read the specs
                         if (info->has_user_sid) {
                             ProtobufCBinaryData user = pmsg->stringtable->s[info->user_sid];
                             printuser(user);
@@ -379,6 +380,7 @@ int main(int argc, char **argv) {
                         if (info->has_uid) {
                             printnumericattribute("uid", info->uid);
                         }
+			}
                         if (info->has_timestamp) {
                             printtimestamp("timestamp", info->timestamp);
                         }
