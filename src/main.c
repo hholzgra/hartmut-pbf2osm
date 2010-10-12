@@ -113,7 +113,7 @@ void printescape(unsigned char *s, unsigned int l) {
         switch (s[i]) {
             case '<':
                 fputs_unlocked("&#60;", stdout);
-				continue;
+                continue;
             case '>':
                 fputs_unlocked("&#62;", stdout);
                 continue;
