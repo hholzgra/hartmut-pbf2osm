@@ -225,6 +225,7 @@ int main(int argc, char **argv) {
     BlockHeader *bhmsg = NULL;  // serialized BlockHeader message
     Blob *bmsg = NULL;          // serialized Blob message (size is given in the header)
 
+    FILE * fd;
 
     char lenbuf[4];
     unsigned char *buf = NULL;
@@ -238,11 +239,21 @@ int main(int argc, char **argv) {
         osmdata
     } state = osmheader;
 
+    if (argc == 1) {
+        fd = fopen(argv[1], "r");
+	if (fd == NULL) {
+            fprintf(stderr, "Can't open %s", argv[1]);
+            return -1;
+        }
+    } else {
+        fd = stdin;
+    }
+
     fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" OUR_TOOL "\">""\n", stdout);
 
     do {
     /* First we are going to receive the size of the BlockHeader */
-    for (i = 0; i < 4 && (c=fgetc(stdin)) != EOF; i++) {
+    for (i = 0; i < 4 && (c=fgetc(fd)) != EOF; i++) {
         lenbuf[i] = c;
     }
     
@@ -269,7 +280,7 @@ int main(int argc, char **argv) {
     }
 
     /* We are reading the BlockHeader */
-    for (i = 0; i < length && (c=fgetc(stdin)) != EOF; i++) {
+    for (i = 0; i < length && (c=fgetc(fd)) != EOF; i++) {
         buf[i] = c;
     }
 
@@ -297,7 +308,7 @@ int main(int argc, char **argv) {
 
     /* We are now reading the 'Blob' */
     buf = (unsigned char *) malloc(length * sizeof(unsigned char *));
-    for (i = 0; i < length && (c=fgetc(stdin)) != EOF; i++) {
+    for (i = 0; i < length && (c=fgetc(fd)) != EOF; i++) {
         buf[i] = c;
     }
 
