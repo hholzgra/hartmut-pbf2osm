@@ -584,7 +584,7 @@ int main(int argc, char **argv) {
                 long int deltalon = 0;
                 unsigned long int deltatimestamp = 0;
                 unsigned long int deltachangeset = 0;
-                unsigned long int deltauid = 0;
+                long int deltauid = 0;
                 unsigned long int deltauser_sid = 0;
 
                 DenseNodes *dense = pmsg->primitivegroup[j]->dense;
