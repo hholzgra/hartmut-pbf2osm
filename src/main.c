@@ -613,7 +613,7 @@ int main(int argc, char **argv) {
                         while (dense->keys_vals[l] != 0 && l < dense->n_keys_vals) {
                             if (has_tags < 1) {
                                 has_tags++;
-                                fputc_unlocked('>', stdout);
+                                fputs_unlocked(">\n", stdout);
                             }
                             
                             ProtobufCBinaryData key = pmsg->stringtable->s[dense->keys_vals[l]];
