@@ -239,7 +239,7 @@ int main(int argc, char **argv) {
         osmdata
     } state = osmheader;
 
-    if (argc == 1) {
+    if (argc == 2) {
         fd = fopen(argv[1], "r");
 	if (fd == NULL) {
             fprintf(stderr, "Can't open %s", argv[1]);
