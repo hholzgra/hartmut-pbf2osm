@@ -50,7 +50,7 @@
     fputc_unlocked('"', stdout);
 
 #define printsotid(name, id) \
-    fputs_unlocked("\t<"name" id=\"", stdout); \
+    fputs_unlocked("\t""<"name" id=\"", stdout); \
     itoa(id); \
     fputc_unlocked('"', stdout);
 
