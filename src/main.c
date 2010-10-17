@@ -34,7 +34,7 @@
 
 #define printtimestamp(attribute, timestamp) \
     char tsbuf[21]; \
-    deltatime2timestamp(timestamp * (pmsg->date_granularity / 1000), tsbuf); \
+    deltatime2timestamp((timestamp * pmsg->date_granularity) / 1000, tsbuf); \
     fputs_unlocked(" "attribute"=\"", stdout); \
     fputs_unlocked(tsbuf, stdout); \
     fputc_unlocked('"', stdout);
