@@ -322,6 +322,7 @@ int main(int argc, char **argv) {
     unsigned char *uncompressed;
     if (bmsg->has_raw) {
         uncompressed = bmsg->raw.data;
+	bmsg->raw_size = bmsg->raw.len; // I wonder if we should do this.
     } else {
         uncompressed = handleCompressedBlob(bmsg);
         if (uncompressed == NULL) {
