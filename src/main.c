@@ -233,10 +233,6 @@ int main(int argc, char **argv) {
     char lenbuf[4];
     unsigned char *buf = NULL;
 
-    char c;
-
-    unsigned int i;
-
     enum {
         osmheader,
         osmdata
@@ -255,11 +251,8 @@ int main(int argc, char **argv) {
     fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" PACKAGE_STRING "\">""\n", stdout);
 
     do {
-    /* First we are going to receive the size of the BlockHeader */
-    for (i = 0; i < 4 && (c=fgetc(fd)) != EOF; i++) {
-      lenbuf[i] = (unsigned char)c;
-    }
-    
+    if (!fread(lenbuf, 4, 1, fd)) break;
+
     length = ntohl(*((uint32_t *) lenbuf));  // convert the buffer to a value
 
     if (verbose) fprintf(stderr, "Length BlockHeader: %d\n", length);
@@ -282,11 +275,9 @@ int main(int argc, char **argv) {
     }
 
     /* We are reading the BlockHeader */
-    for (i = 0; i < length && (c=fgetc(fd)) != EOF; i++) {
-        buf[i] = c;
-    }
+    if(! fread(buf, length, 1, fd)) break;
 
-    bhmsg = block_header__unpack (NULL, i, buf);
+    bhmsg = block_header__unpack (NULL, length, buf);
     free(buf);
     if (bhmsg == NULL) {
         fprintf(stderr, "Error unpacking BlockHeader message\n");
@@ -310,11 +301,9 @@ int main(int argc, char **argv) {
 
     /* We are now reading the 'Blob' */
     buf = (unsigned char *) malloc(length * sizeof(unsigned char *));
-    for (i = 0; i < length && (c=fgetc(fd)) != EOF; i++) {
-        buf[i] = c;
-    }
+    if(! fread(buf, length, 1, fd)) break;
 
-    bmsg = blob__unpack (NULL, i, buf);
+    bmsg = blob__unpack (NULL, length, buf);
     if (bmsg == NULL) {
         fprintf(stderr, "Error unpacking Blob message\n");
         return 1;
@@ -654,9 +643,15 @@ int main(int argc, char **argv) {
     if (!bmsg->has_raw) free(uncompressed);
     blob__free_unpacked (bmsg, &protobuf_c_system_allocator);
 
-    } while (c != EOF);
+    } while (!feof(fd));
 
     fputs_unlocked("</osm>""\n", stdout);
+
+    if (!feof(fd)) {
+      fprintf(stderr, "Input processing terminated early\n");
+      return 1;
+    }
+
     return 0;
 }
 /* vim: set ts=4 sw=4 tw=79 expandtab :*/
