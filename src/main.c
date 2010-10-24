@@ -86,29 +86,20 @@ void deltatime2timestamp(const long int deltatimestamp, char *timestamp) {
 
 void itoa(int value) {
     char result[20];
-    unsigned char base = 10;
-    // check that the base if valid
-    // if (base < 2 || base > 36) { *result = '\0'; return result; }
     
-    char* ptr = result, *ptr1 = result, tmp_char;
+    char* ptr = result + sizeof(result);
     int tmp_value;
     
+    *--ptr = '\0';
     do {
         tmp_value = value;
-        value /= base;
-        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
+        value /= 10;
+	*--ptr = "9876543210123456789"[9 + (tmp_value - value*10)];
     } while ( value );
     
-    // Apply negative sign
-    if (tmp_value < 0) *ptr++ = '-';
-    *ptr-- = '\0';
-    while(ptr1 < ptr) {
-       tmp_char = *ptr;
-       *ptr--= *ptr1;
-       *ptr1++ = tmp_char;
-    }
+    if (tmp_value < 0) *--ptr = '-';
     
-    fputs_unlocked(result, stdout);
+    fputs_unlocked(ptr, stdout);
 }
 
 void printescape(unsigned char *s, unsigned int l) {
