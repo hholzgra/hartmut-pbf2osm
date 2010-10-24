@@ -8,6 +8,8 @@
  *
  */
 
+#define _GNU_SOURCE
+
 #include "fileformat.pb-c.h"
 #include "osmformat.pb-c.h"
 #include <arpa/inet.h>
@@ -230,7 +232,7 @@ int main(int argc, char **argv) {
     char lenbuf[4];
     unsigned char *buf = NULL;
 
-    unsigned char c;
+    char c;
 
     unsigned int i;
 
@@ -254,17 +256,16 @@ int main(int argc, char **argv) {
     do {
     /* First we are going to receive the size of the BlockHeader */
     for (i = 0; i < 4 && (c=fgetc(fd)) != EOF; i++) {
-        lenbuf[i] = c;
+      lenbuf[i] = (unsigned char)c;
     }
     
     length = ntohl(*((uint32_t *) lenbuf));  // convert the buffer to a value
 
     if (verbose) fprintf(stderr, "Length BlockHeader: %d\n", length);
 
-    if (length <= 0 || length > MAX_BLOCK_HEADER_SIZE) {
-        if (length == -1) {
-            fputs_unlocked("</osm>""\n", stdout);
-            return 0;
+    if (length == 0 || length > MAX_BLOCK_HEADER_SIZE) {
+        if (feof(fd)) {
+	  break;
         }
 
         fprintf(stderr, "Block Header isn't present or exceeds minimum/maximum size\n");
@@ -369,7 +370,7 @@ int main(int argc, char **argv) {
 
             /* TODO: Nodes is *untested* */
             if (pmsg->primitivegroup[j]->n_nodes > 0) {
-                for (int k = 0; k < pmsg->primitivegroup[j]->n_nodes; k++) {
+                for (unsigned k = 0; k < pmsg->primitivegroup[j]->n_nodes; k++) {
                     Node *node = pmsg->primitivegroup[j]->nodes[k];
 
                     printf("\t""<node id=\"%li\" lat=\"%.07f\" lon=\"%.07f\"",
@@ -401,7 +402,7 @@ int main(int argc, char **argv) {
                     } else {
                         fputs_unlocked(">""\n", stdout);
 
-                        for (int l = 0; l < node->n_keys; l++) {
+                        for (unsigned l = 0; l < node->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[node->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[node->vals[l]];
 
@@ -414,7 +415,7 @@ int main(int argc, char **argv) {
             }
             else
             if (pmsg->primitivegroup[j]->n_ways > 0) {
-                for (int k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
+                for (unsigned k = 0; k < pmsg->primitivegroup[j]->n_ways; k++) {
                     Way *way = pmsg->primitivegroup[j]->ways[k];
                     printsotid("way", way->id);
                     if (way->info) {
@@ -444,12 +445,12 @@ int main(int argc, char **argv) {
                         
                         fputs_unlocked(">""\n", stdout);
                         
-                        for (int l = 0; l < way->n_refs; l++) {
+                        for (unsigned l = 0; l < way->n_refs; l++) {
                             deltaref += way->refs[l];
                             printnd(deltaref);
                         }
 
-                        for (int l = 0; l < way->n_keys; l++) {
+                        for (unsigned l = 0; l < way->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[way->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[way->vals[l]];
 
@@ -462,7 +463,7 @@ int main(int argc, char **argv) {
             }
             else
             if (pmsg->primitivegroup[j]->n_relations > 0) {
-                for (int k = 0; k < pmsg->primitivegroup[j]->n_relations; k++) {
+                for (unsigned k = 0; k < pmsg->primitivegroup[j]->n_relations; k++) {
                     Relation *relation = pmsg->primitivegroup[j]->relations[k];
                     printsotid("relation", relation->id);
                     if (relation->info) {
@@ -492,7 +493,7 @@ int main(int argc, char **argv) {
                         
                         fputs_unlocked(">""\n", stdout);
                         
-                        for (int l = 0; l < relation->n_memids; l++) {
+                        for (unsigned l = 0; l < relation->n_memids; l++) {
                             char *type;
                             ProtobufCBinaryData role =  pmsg->stringtable->s[relation->roles_sid[l]];
                             deltamemids += relation->memids[l];
@@ -515,7 +516,7 @@ int main(int argc, char **argv) {
                             printmember(type, deltamemids, role);
                         }
 
-                        for (int l = 0; l < relation->n_keys; l++) {
+                        for (unsigned l = 0; l < relation->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[relation->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[relation->vals[l]];
 
@@ -528,7 +529,7 @@ int main(int argc, char **argv) {
             }
             else
             if (pmsg->primitivegroup[j]->n_changesets > 0) {
-                for (int k = 0; k < pmsg->primitivegroup[j]->n_changesets; k++) {
+                for (unsigned k = 0; k < pmsg->primitivegroup[j]->n_changesets; k++) {
                     ChangeSet *changeset = pmsg->primitivegroup[j]->changesets[k];
 
                     printsotid("changeset", changeset->id);
@@ -569,7 +570,7 @@ int main(int argc, char **argv) {
                     } else {
                         fputs_unlocked(">""\n", stdout);
 
-                        for (int l = 0; l < changeset->n_keys; l++) {
+                        for (unsigned l = 0; l < changeset->n_keys; l++) {
                             ProtobufCBinaryData key = pmsg->stringtable->s[changeset->keys[l]];
                             ProtobufCBinaryData val = pmsg->stringtable->s[changeset->vals[l]];
 
@@ -582,7 +583,7 @@ int main(int argc, char **argv) {
             }
             else
             if (pmsg->primitivegroup[j]->dense) {
-                int l = 0;
+                unsigned l = 0;
                 unsigned long int deltaid = 0;
                 long int deltalat = 0;
                 long int deltalon = 0;
@@ -594,7 +595,7 @@ int main(int argc, char **argv) {
                 DenseNodes *dense = pmsg->primitivegroup[j]->dense;
                 
 
-                for (int k = 0; k < dense->n_id; k++) {
+                for (unsigned k = 0; k < dense->n_id; k++) {
                     unsigned char has_tags = 0;
                     deltaid += dense->id[k];
                     deltalat += dense->lat[k];
@@ -652,7 +653,9 @@ int main(int argc, char **argv) {
     if (!bmsg->has_raw) free(uncompressed);
     blob__free_unpacked (bmsg, &protobuf_c_system_allocator);
 
-
     } while (c != EOF);
+
+    fputs_unlocked("</osm>""\n", stdout);
+    return 0;
 }
 /* vim: set ts=4 sw=4 tw=79 expandtab :*/
