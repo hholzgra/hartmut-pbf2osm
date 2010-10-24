@@ -1,5 +1,25 @@
-generate-proto:
-	protoc-c --proto_path=../OSM-binary/src --c_out=. ../OSM-binary/src/*.proto
+bin_PROGRAMS = pbf2osm
 
-all:
-	gcc -D_GNU_SOURCE -Wall -pedantic -std=c99 -O0 -ggdb -o test main.c fileformat.pb-c.c osmformat.pb-c.c -lprotobuf-c -lz -lbz2
+pbf2osm_SOURCES = \
+  fileformat.pb-c.c fileformat.pb-c.h \
+  osmformat.pb-c.c osmformat.pb-c.h \
+  main.c
+
+BUILT_SOURCES = \
+  fileformat.pb-c.c fileformat.pb-c.h \
+  osmformat.pb-c.c osmformat.pb-c.h
+
+AM_CFLAGS = -Wall -Wextra -pedantic
+AM_LDFLAGS = -lprotobuf-c -lz -lbz2
+
+# protobuf C default rules
+
+%.pb-c.c: ../OSM-binary/src/%.proto
+	 $(AM_V_GEN) $(PROTOC_C) --proto_path=../OSM-binary/src --c_out=. $<
+
+%.pb-c.h: %.pb-c.c
+	@if test ! -f $@; then \
+	  rm -f $<; \
+	  $(MAKE) $(AM_MAKEFLAGS) $<; \
+	else :; fi
+
