@@ -1,2 +1,6 @@
+*.o
+*~
+.deps
+pbf2osm
 fileformat*
 osmformat*
