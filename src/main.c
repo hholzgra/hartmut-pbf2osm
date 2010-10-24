@@ -10,6 +10,8 @@
 
 #define _GNU_SOURCE
 
+#include "config.h"
+
 #include "fileformat.pb-c.h"
 #include "osmformat.pb-c.h"
 #include <arpa/inet.h>
@@ -22,7 +24,6 @@
 #include <bzlib.h>
 
 #define verbose 0
-#define OUR_TOOL "pbf2osm"
 #define NANO_DEGREE .000000001
 #define MAX_BLOCK_HEADER_SIZE 64*1024
 #define MAX_BLOB_SIZE 32*1024*1024
@@ -251,7 +252,7 @@ int main(int argc, char **argv) {
         fd = stdin;
     }
 
-    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" OUR_TOOL "\">""\n", stdout);
+    fputs_unlocked("<?xml version='1.0' encoding='UTF-8'?>\n<osm version=\"0.6\" generator=\"" PACKAGE_STRING "\">""\n", stdout);
 
     do {
     /* First we are going to receive the size of the BlockHeader */
