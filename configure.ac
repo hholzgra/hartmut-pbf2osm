@@ -25,10 +25,25 @@ dnl Make sure we have libtool installed
 AM_PROG_LIBTOOL
 
 dnl check for zlib library
-AX_CHECK_ZLIB
+AX_LIB_ZLIB
+if test "$HAVE_ZLIB" = "no" 
+then
+  AC_MSG_ERROR([required library not found]);
+fi
 
 dnl Check for bzip2 library
 AX_LIB_BZIP2
+if test "$HAVE_BZIP2" = "no" 
+then
+  AC_MSG_ERROR([required library not found]);
+fi
+
+dnl Check for protobuf-c library
+AX_LIB_PROTOBUF_C
+if test "$HAVE_PROTOBUF_C" = "no" 
+then
+  AC_MSG_ERROR([required library not found]);
+fi
 
 dnl check for right version of protoc-c
 PROTOC_C_MIN_VERSION="2.3.0"
