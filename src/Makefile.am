@@ -9,8 +9,8 @@ BUILT_SOURCES = \
   fileformat.pb-c.c fileformat.pb-c.h \
   osmformat.pb-c.c osmformat.pb-c.h
 
-AM_CFLAGS = -Wall -Wextra -pedantic
-AM_LDFLAGS = -lprotobuf-c -lz -lbz2
+AM_CFLAGS = -Wall -Wextra -pedantic $(ZLIB_CFLAGS)  $(BZIP2_CFLAGS) 
+AM_LDFLAGS = -lprotobuf-c -lz       $(ZLIB_LDFLAGS) $(BZIP2_LDFLAGS)
 
 # protobuf C default rules
 
