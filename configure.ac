@@ -44,7 +44,7 @@ if test "$HAVE_PROTOBUF_C" = "no"
 then
   AC_MSG_ERROR([required library not found]);
 fi
-AC_CHECK_MEMBER([ProtobufCMessageDescriptor.packed],AC_MSG_RESULT([OK]),AC_MSG_ERROR([need at least protobuf-c 0.14]))
+AC_CHECK_MEMBER([ProtobufCFieldDescriptor.packed],,AC_MSG_ERROR([need at least protobuf-c 0.14]),[[#include <google/protobuf-c/protobuf-c.h>]])
 
 dnl check for right version of protoc-c
 PROTOC_C_MIN_VERSION="2.3.0"
